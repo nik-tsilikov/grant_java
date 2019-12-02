@@ -16,4 +16,7 @@ dependencies {
 
     compile "org.apache.poi:poi:3.17"
     compile "org.apache.poi:poi-ooxml:3.17"
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    compile group: 'com.google.guava', name: 'guava', version: '28.1-jre'
+
 }
