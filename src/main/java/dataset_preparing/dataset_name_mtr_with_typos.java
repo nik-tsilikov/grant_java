@@ -21,12 +21,38 @@ public class dataset_name_mtr_with_typos {
     public static void main(String args[]) {
         try {
             TreeSet<String> records = loadExcel(FILE_PATH_1);
-            TreeSet<String> words = loadExcel(FILE_PATH_2);
+          //  TreeSet<String> words = loadExcel(FILE_PATH_2);
             TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3);
+            TreeSet<String> recordsWithTypos = new TreeSet<>(records);
+            System.out.println(recordsWithTypos.addAll(getRecordsWithTyposVariations(records, words_with_orfos)));
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
+
+    private static TreeSet<String> getRecordsWithTyposVariations (TreeSet<String> records,TreeMap<String, HashSet<String>> words_with_orfos) {
+        TreeSet<String> result = new TreeSet<>();
+        Set<String> original_words = words_with_orfos.keySet();
+        boolean was_replacements = false;
+        for (String record : records) {
+            String cleanedRecord = cleanRecord(" " + record + " ");
+            for (String orginal_word : original_words) {
+                if (cleanedRecord.contains(" " + orginal_word + " ")) {
+                    HashSet<String> replasements = words_with_orfos.get(orginal_word);
+                    for (String replacement : replasements) {
+                        String tempRecord = record.replace(orginal_word, replacement);
+                        was_replacements = true;
+                        result.add(tempRecord);
+                    }
+                }
+            }
+        }
+        if (was_replacements) {
+            result.addAll(getRecordsWithTyposVariations(result, words_with_orfos));
+        }
+        return result;
+    }
+
 
     private static TreeMap<String, HashSet<String>> loadMapExcel(String filename) throws IOException, InvalidFormatException  {
         TreeMap<String, HashSet<String>> result = new TreeMap<>();
@@ -50,7 +76,7 @@ public class dataset_name_mtr_with_typos {
                 if (wordVariations.size() != 0) {
                     result.put(currWord, wordVariations);
                 }
-                prevWord = new String(currWord);
+                prevWord = currWord;
                 wordVariations = new HashSet<>();
             }
             cell = row.getCell(1);
@@ -71,12 +97,15 @@ public class dataset_name_mtr_with_typos {
         DataFormatter dataFormatter = new DataFormatter();
 
         Iterator<Row> rowIterator = sheet.rowIterator();
-        int i = 1;
         while (rowIterator.hasNext()) {
             Row row = rowIterator.next();
 
             Cell cell = row.getCell(0);
-            result.add(Strings.nullToEmpty(cell.getStringCellValue()));
+            if (cell != null) {
+                if (!(cell.getStringCellValue() == null) && !cell.getStringCellValue().isEmpty()) {
+                    result.add(Strings.nullToEmpty(cell.getStringCellValue()));
+                }
+            }
         }
 
         return result;
@@ -117,5 +146,13 @@ public class dataset_name_mtr_with_typos {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static String cleanRecord(String record) {
+        record = record.toLowerCase();
+        record = record.replaceAll("[0-9A-Za-z;,.#()/*+-]", "");
+        record.replace("№", "");
+        record = record.replaceAll(" {2,}", " ");
+        return record;
     }
 }
