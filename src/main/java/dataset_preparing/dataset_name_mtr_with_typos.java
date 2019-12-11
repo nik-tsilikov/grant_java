@@ -24,7 +24,8 @@ public class dataset_name_mtr_with_typos {
           //  TreeSet<String> words = loadExcel(FILE_PATH_2);
             TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3);
             TreeSet<String> recordsWithTypos = new TreeSet<>(records);
-            System.out.println(recordsWithTypos.addAll(getRecordsWithTyposVariations(records, words_with_orfos)));
+            recordsWithTypos.addAll(getRecordsWithTyposVariations(records, words_with_orfos));
+            saveWorkbook(prepareExcel(recordsWithTypos));
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -55,35 +56,47 @@ public class dataset_name_mtr_with_typos {
 
 
     private static TreeMap<String, HashSet<String>> loadMapExcel(String filename) throws IOException, InvalidFormatException  {
-        TreeMap<String, HashSet<String>> result = new TreeMap<>();
+        Cell cell = null;
+        int i = 0;
+        try {
+            TreeMap<String, HashSet<String>> result = new TreeMap<>();
 
-        Workbook workbook = WorkbookFactory.create(new File(filename));
+            Workbook workbook = WorkbookFactory.create(new File(filename));
 
-        Sheet sheet = workbook.getSheetAt(0);
+            Sheet sheet = workbook.getSheetAt(0);
 
-        DataFormatter dataFormatter = new DataFormatter();
+            DataFormatter dataFormatter = new DataFormatter();
 
-        Iterator<Row> rowIterator = sheet.rowIterator();
+            Iterator<Row> rowIterator = sheet.rowIterator();
 
-        Cell cell;
-        String prevWord = "";
-        HashSet<String> wordVariations = new HashSet<>();
-        while (rowIterator.hasNext()) {
-            Row row = rowIterator.next();
-            cell = row.getCell(0);
-            String currWord = cell.getStringCellValue();
-            if (!Objects.equals(currWord, prevWord)) {
-                if (wordVariations.size() != 0) {
-                    result.put(currWord, wordVariations);
+
+            String prevWord = "";
+            HashSet<String> wordVariations = new HashSet<>();
+            while (rowIterator.hasNext()) {
+                i++;
+                Row row = rowIterator.next();
+                cell = row.getCell(0);
+                if (cell != null) {
+                    String currWord = cell.getStringCellValue();
+                    if (!Objects.equals(currWord, prevWord)) {
+                        if (wordVariations.size() != 0) {
+                            result.put(currWord, wordVariations);
+                        }
+                        prevWord = currWord;
+                        wordVariations = new HashSet<>();
+                    }
+                    cell = row.getCell(1);
+                    if (cell != null) {
+                        wordVariations.add(cell.getStringCellValue());
+                    }
                 }
-                prevWord = currWord;
-                wordVariations = new HashSet<>();
             }
-            cell = row.getCell(1);
-            wordVariations.add(cell.getStringCellValue());
-        }
 
-        return result;
+            return result;
+        } catch (Exception e) {
+            System.out.println("Error cell: " + cell + ", row " + i);
+            throw e;
+        }
     }
 
     private static TreeSet<String> loadExcel(String filename) throws IOException, InvalidFormatException {
@@ -114,7 +127,7 @@ public class dataset_name_mtr_with_typos {
     private static Workbook prepareExcel(TreeSet<String> data) {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
-        XSSFSheet sheet = workbook.createSheet("univ_dataset_words");
+        XSSFSheet sheet = workbook.createSheet("name_mtr_with_typos");
 
 
 
@@ -140,7 +153,7 @@ public class dataset_name_mtr_with_typos {
 
     public static void saveWorkbook(Workbook workbook) {
         try {
-            FileOutputStream out = new FileOutputStream(new File("univ_dataset_all_words.xlsx"));
+            FileOutputStream out = new FileOutputStream(new File("name_mtr_with_typos.xlsx"));
             workbook.write(out);
             out.close();
         } catch (Exception e) {
