@@ -21,41 +21,51 @@ public class dataset_name_mtr_with_typos {
     public static void main(String args[]) {
         try {
             TreeSet<String> records = loadExcel(FILE_PATH_1);
-          //  TreeSet<String> words = loadExcel(FILE_PATH_2);
-            TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3);
-            TreeSet<String> recordsWithTypos = new TreeSet<>(records);
-            recordsWithTypos.addAll(getRecordsWithTyposVariations(records, words_with_orfos));
+            System.out.println("Records list loaded");
+            TreeSet<String> existingWords = loadExcel(FILE_PATH_2);
+            System.out.println("Existing words list loaded");
+            TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3, existingWords);
+            System.out.println("Words with orfos map loaded");
+            TreeMap<String, String> recordsWithTypos = new TreeMap<>();
+
+            recordsWithTypos.putAll(getRecordsWithTyposVariations(records, words_with_orfos));
+            System.out.println("Records with orfos list prepared");
             saveWorkbook(prepareExcel(recordsWithTypos));
+            System.out.println("Workbook saved");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private static TreeSet<String> getRecordsWithTyposVariations (TreeSet<String> records,TreeMap<String, HashSet<String>> words_with_orfos) {
-        TreeSet<String> result = new TreeSet<>();
+    private static TreeMap<String, String> getRecordsWithTyposVariations (TreeSet<String> records,TreeMap<String, HashSet<String>> words_with_orfos) {
+        TreeMap<String, String> result = new TreeMap<>();
         Set<String> original_words = words_with_orfos.keySet();
         boolean was_replacements = false;
+        System.out.println("Records list size: " + records.size());
         for (String record : records) {
+            result.put(record, record);
             String cleanedRecord = cleanRecord(" " + record + " ");
+            System.out.println("Record " + record + "cleaned");
             for (String orginal_word : original_words) {
                 if (cleanedRecord.contains(" " + orginal_word + " ")) {
                     HashSet<String> replasements = words_with_orfos.get(orginal_word);
                     for (String replacement : replasements) {
                         String tempRecord = record.replace(orginal_word, replacement);
+                        System.out.println("Replacement done");
                         was_replacements = true;
-                        result.add(tempRecord);
+                        result.put(record, tempRecord);
                     }
                 }
             }
         }
-        if (was_replacements) {
-            result.addAll(getRecordsWithTyposVariations(result, words_with_orfos));
-        }
+//        if (was_replacements) {
+//            result.addAll(getRecordsWithTyposVariations(result, words_with_orfos));
+//        }
         return result;
     }
 
 
-    private static TreeMap<String, HashSet<String>> loadMapExcel(String filename) throws IOException, InvalidFormatException  {
+    private static TreeMap<String, HashSet<String>> loadMapExcel(String filename, TreeSet<String> existingWords) throws IOException, InvalidFormatException  {
         Cell cell = null;
         int i = 0;
         try {
@@ -78,16 +88,18 @@ public class dataset_name_mtr_with_typos {
                 cell = row.getCell(0);
                 if (cell != null) {
                     String currWord = cell.getStringCellValue();
-                    if (!Objects.equals(currWord, prevWord)) {
-                        if (wordVariations.size() != 0) {
-                            result.put(currWord, wordVariations);
+                    if (existingWords.contains(currWord)) {
+                        if (!Objects.equals(currWord, prevWord)) {
+                            if (wordVariations.size() != 0) {
+                                result.put(currWord, wordVariations);
+                            }
+                            prevWord = currWord;
+                            wordVariations = new HashSet<>();
                         }
-                        prevWord = currWord;
-                        wordVariations = new HashSet<>();
-                    }
-                    cell = row.getCell(1);
-                    if (cell != null) {
-                        wordVariations.add(cell.getStringCellValue());
+                        cell = row.getCell(1);
+                        if (cell != null) {
+                            wordVariations.add(cell.getStringCellValue());
+                        }
                     }
                 }
             }
@@ -124,14 +136,14 @@ public class dataset_name_mtr_with_typos {
         return result;
     }
 
-    private static Workbook prepareExcel(TreeSet<String> data) {
+    private static Workbook prepareExcel(TreeMap<String, String> data) {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
         XSSFSheet sheet = workbook.createSheet("name_mtr_with_typos");
 
 
 
-        Iterator<String> data1Ie = data.iterator();
+
         Row row;
         Cell cell;
         int rownum = 0;
