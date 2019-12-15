@@ -26,24 +26,21 @@ public class dataset_name_mtr_with_typos {
             System.out.println("Existing words list loaded");
             TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3, existingWords);
             System.out.println("Words with orfos map loaded");
-            TreeMap<String, String> recordsWithTypos = new TreeMap<>();
-
-            recordsWithTypos.putAll(getRecordsWithTyposVariations(records, words_with_orfos));
-            System.out.println("Records with orfos list prepared");
-            saveWorkbook(prepareExcel(recordsWithTypos));
+            saveWorkbook(prepareExcel(getRecordsWithTyposVariations(records, words_with_orfos)));
             System.out.println("Workbook saved");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private static TreeMap<String, String> getRecordsWithTyposVariations (TreeSet<String> records,TreeMap<String, HashSet<String>> words_with_orfos) {
-        TreeMap<String, String> result = new TreeMap<>();
+    private static TreeMap<String, HashSet<String>> getRecordsWithTyposVariations (TreeSet<String> records,TreeMap<String, HashSet<String>> words_with_orfos) {
+        TreeMap<String, HashSet<String>> result = new TreeMap<>();
         Set<String> original_words = words_with_orfos.keySet();
         boolean was_replacements = false;
         System.out.println("Records list size: " + records.size());
         for (String record : records) {
-            result.put(record, record);
+            HashSet<String> recordVariations = new HashSet<>();
+            recordVariations.add(record);
             String cleanedRecord = cleanRecord(" " + record + " ");
             System.out.println("Record " + record + "cleaned");
             for (String orginal_word : original_words) {
@@ -53,10 +50,12 @@ public class dataset_name_mtr_with_typos {
                         String tempRecord = record.replace(orginal_word, replacement);
                         System.out.println("Replacement done");
                         was_replacements = true;
-                        result.put(record, tempRecord);
+                        //result.put(record, tempRecord);
+                        recordVariations.add(tempRecord);
                     }
                 }
             }
+            result.put(record, recordVariations);
         }
 //        if (was_replacements) {
 //            result.addAll(getRecordsWithTyposVariations(result, words_with_orfos));
@@ -136,25 +135,28 @@ public class dataset_name_mtr_with_typos {
         return result;
     }
 
-    private static Workbook prepareExcel(TreeMap<String, String> data) {
+    private static Workbook prepareExcel(TreeMap<String, HashSet<String>>  data) {
         XSSFWorkbook workbook = new XSSFWorkbook();
 
         XSSFSheet sheet = workbook.createSheet("name_mtr_with_typos");
 
-
-
-
         Row row;
         Cell cell;
         int rownum = 0;
-
-        while(data1Ie.hasNext()) {
-            String word = data1Ie.next();
-            row = sheet.createRow(rownum);
-            cell = row.createCell(0);
-            cell.setCellValue(word);
-            rownum++;
-            System.out.println("Word #"+ (rownum) + " processed.");
+        int recordNum = 0;
+        HashSet<String> records = new HashSet<>(data.keySet());
+        for (String record : records) {
+            HashSet<String> variations = new HashSet<>(data.get(record));
+            for (String variation : variations) {
+                row = sheet.createRow(rownum);
+                cell = row.createCell(0);
+                cell.setCellValue(record);
+                cell = row.createCell(1);
+                cell.setCellValue(variation);
+                rownum++;
+            }
+            recordNum++;
+            System.out.println("Record #"+ (recordNum) + " processed.");
         }
 
         return workbook;
@@ -165,7 +167,7 @@ public class dataset_name_mtr_with_typos {
 
     public static void saveWorkbook(Workbook workbook) {
         try {
-            FileOutputStream out = new FileOutputStream(new File("name_mtr_with_typos.xlsx"));
+            FileOutputStream out = new FileOutputStream(new File("dataset_name_mtr_with_typos.xlsx"));
             workbook.write(out);
             out.close();
         } catch (Exception e) {
