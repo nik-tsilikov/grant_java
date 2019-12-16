@@ -1,7 +1,6 @@
-package dataset_preparing;
+package dataset_name_mtr_typos_preparing;
 
 import com.google.common.base.Strings;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -12,7 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-public class dataset_name_mtr_with_typos {
+public class stage_1_prepare_containing_words_with_typos {
 
     public static final String FILE_PATH_1 = "dataset_name_mtr_dedup.xlsx";
     public static final String FILE_PATH_2 = "univ_dataset_all_words.xlsx";
@@ -25,8 +24,7 @@ public class dataset_name_mtr_with_typos {
             TreeSet<String> existingWords = loadExcel(FILE_PATH_2);
             System.out.println("Existing words list loaded");
             TreeMap<String, HashSet<String>> words_with_orfos = loadMapExcel(FILE_PATH_3, existingWords);
-            System.out.println("Words with orfos map loaded");
-            saveWorkbook(prepareExcel(getRecordsWithTyposVariations(records, words_with_orfos)));
+            saveWorkbook(prepareExcel(words_with_orfos));
             System.out.println("Workbook saved");
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -64,7 +62,7 @@ public class dataset_name_mtr_with_typos {
     }
 
 
-    private static TreeMap<String, HashSet<String>> loadMapExcel(String filename, TreeSet<String> existingWords) throws IOException, InvalidFormatException  {
+    private static TreeMap<String, HashSet<String>> loadMapExcel(String filename, TreeSet<String> existingWords) throws IOException, InvalidFormatException {
         Cell cell = null;
         int i = 0;
         try {
@@ -167,7 +165,7 @@ public class dataset_name_mtr_with_typos {
 
     public static void saveWorkbook(Workbook workbook) {
         try {
-            FileOutputStream out = new FileOutputStream(new File("name_mtr_with_typos.xlsx"));
+            FileOutputStream out = new FileOutputStream(new File("all_words_with_orfos.xlsx"));
             workbook.write(out);
             out.close();
         } catch (Exception e) {
