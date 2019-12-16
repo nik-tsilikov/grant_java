@@ -41,7 +41,7 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
         SXSSFWorkbook wb = null;
         FileOutputStream fos = null;
         try {
-            wb = new SXSSFWorkbook(500000);//SXSSFWorkbook.DEFAULT_WINDOW_SIZE/* 100 */);
+            wb = new SXSSFWorkbook(100);//SXSSFWorkbook.DEFAULT_WINDOW_SIZE/* 100 */);
             Sheet sheet = wb.createSheet();
             Row row = sheet.createRow(0);
             Cell cell = row.createCell(0);
@@ -59,7 +59,8 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
 
             Iterator<String> data1Ie = allRecords1.iterator();
 
-            int rownum = 0;
+            int rownum = 1;
+            int file_index = 1;
             int qid = 1;
             int record1_id = 1;
             int record2_id = 2;
@@ -95,13 +96,36 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
                         cell.setCellValue(0);
                     }
 
-                    System.out.println("Records pair " + rownum + " of " + allRecords1.size()*allRecords2.size() + " processed.");
-                    rownum++;
-                }
+                    System.out.println("Records pair " + (rownum + (file_index-1)*1000000) + " of " + (allRecords1.size()*allRecords2.size()) + " processed.");
 
+                    if (rownum % 1000000 == 0) {
+                        fos = new FileOutputStream(new File("dataset_for_doc2vec_simple_pairs_with_typos_" + file_index + ".xlsx"));
+                        file_index++;
+                        wb.write(fos);
+                        wb = new SXSSFWorkbook(100);//SXSSFWorkbook.DEFAULT_WINDOW_SIZE/* 100 */);
+                        sheet = wb.createSheet();
+                        row = sheet.createRow(0);
+                        cell = row.createCell(0);
+                        cell.setCellValue("id");
+                        cell = row.createCell(1);
+                        cell.setCellValue("rid1");
+                        cell = row.createCell(2);
+                        cell.setCellValue("rid2");
+                        cell = row.createCell(3);
+                        cell.setCellValue("record1");
+                        cell = row.createCell(4);
+                        cell.setCellValue("record2");
+                        cell = row.createCell(5);
+                        cell.setCellValue("is_duplicate");
+                        rownum = 1;
+                    }
+                    rownum++;
+
+                }
             }
-            fos = new FileOutputStream(new File("dataset_for_doc2vec_simple_pairs_with_typos.xlsx"));;
-            wb.write(fos);;
+            fos = new FileOutputStream(new File("dataset_for_doc2vec_simple_pairs_with_typos_" + file_index + ".xlsx"));
+            file_index++;
+            wb.write(fos);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }finally {
