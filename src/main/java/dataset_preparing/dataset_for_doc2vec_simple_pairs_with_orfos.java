@@ -2,6 +2,7 @@ package dataset_preparing;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -20,88 +21,115 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
     public static void main(String args[]) {
         try {
 
-            saveWorkbook(prepareExcel(loadExcel(FILE_PATH)));
+            //saveWorkbook(prepareExcel(loadExcel(FILE_PATH)));
+            prepareExcel(loadExcel(FILE_PATH));
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private static Workbook prepareExcel(HashMap<String, HashSet<String>> data) {
+    private static void prepareExcel(HashMap<String, String> data) {
         HashSet<String> allRecords1 = new HashSet<>();
-        data.forEach((s, strings) -> allRecords1.addAll(strings));
+        allRecords1.addAll(data.keySet());
 
         HashSet<String> allRecords2 = new HashSet<>(allRecords1);
-        XSSFWorkbook workbook = new XSSFWorkbook();
+      //  XSSFWorkbook workbook = new XSSFWorkbook();
 
-        XSSFSheet sheet = workbook.createSheet("doc2vec_test_dataset");
+       // XSSFSheet sheet = workbook.createSheet("doc2vec_test_dataset");
 
-        Row row = sheet.createRow(0);
-        Cell cell = row.createCell(0);
-        cell.setCellValue("id");
-        cell = row.createCell(1);
-        cell.setCellValue("rid1");
-        cell = row.createCell(2);
-        cell.setCellValue("rid2");
-        cell = row.createCell(3);
-        cell.setCellValue("record1");
-        cell = row.createCell(4);
-        cell.setCellValue("record2");
-        cell = row.createCell(5);
-        cell.setCellValue("is_duplicate");
+        SXSSFWorkbook wb = null;
+        FileOutputStream fos = null;
+        try {
+            wb = new SXSSFWorkbook(500000);//SXSSFWorkbook.DEFAULT_WINDOW_SIZE/* 100 */);
+            Sheet sheet = wb.createSheet();
+            Row row = sheet.createRow(0);
+            Cell cell = row.createCell(0);
+            cell.setCellValue("id");
+            cell = row.createCell(1);
+            cell.setCellValue("rid1");
+            cell = row.createCell(2);
+            cell.setCellValue("rid2");
+            cell = row.createCell(3);
+            cell.setCellValue("record1");
+            cell = row.createCell(4);
+            cell.setCellValue("record2");
+            cell = row.createCell(5);
+            cell.setCellValue("is_duplicate");
 
-        Iterator<String> data1Ie = allRecords1.iterator();
+            Iterator<String> data1Ie = allRecords1.iterator();
 
-        int rownum = 1;
-        int qid = 1;
-        int record1_id = 1;
-        int record2_id = 2;
-        while(data1Ie.hasNext()) {
-            String record1 = data1Ie.next();
-            Iterator<String> data2Ie = allRecords2.iterator();
-            while (data2Ie.hasNext()) {
-                row = sheet.createRow(rownum);
-                String record2 = data2Ie.next();
+            int rownum = 0;
+            int qid = 1;
+            int record1_id = 1;
+            int record2_id = 2;
+            while(data1Ie.hasNext()) {
+                String record1 = data1Ie.next();
+                Iterator<String> data2Ie = allRecords2.iterator();
+                while (data2Ie.hasNext()) {
+                    row = sheet.createRow(rownum);
+                    String record2 = data2Ie.next();
 
-                cell = row.createCell(0);
-                cell.setCellValue(qid);
-                qid++;
+                    cell = row.createCell(0);
+                    cell.setCellValue(qid);
+                    qid++;
 
-                cell = row.createCell(1);
-                cell.setCellValue(record1_id);
-                record1_id += 2;
+                    cell = row.createCell(1);
+                    cell.setCellValue(record1_id);
+                    record1_id += 2;
 
-                cell = row.createCell(2);
-                cell.setCellValue(record2_id);
-                record2_id += 2;
+                    cell = row.createCell(2);
+                    cell.setCellValue(record2_id);
+                    record2_id += 2;
 
-                cell = row.createCell(3);
-                cell.setCellValue(record1);
+                    cell = row.createCell(3);
+                    cell.setCellValue(record1);
 
-                cell = row.createCell(4);
-                cell.setCellValue(record2);
+                    cell = row.createCell(4);
+                    cell.setCellValue(record2);
 
-                cell = row.createCell(5);
-                if (Objects.equals(getRecordKey(record1, data), getRecordKey(record2,data))) {
-                    cell.setCellValue(1);
-                } else {
-                    cell.setCellValue(0);
+                    cell = row.createCell(5);
+                    if (Objects.equals(data.get(record1), data.get(record2))) {
+                        cell.setCellValue(1);
+                    } else {
+                        cell.setCellValue(0);
+                    }
+
+                    System.out.println("Records pair " + rownum + " of " + allRecords1.size()*allRecords2.size() + " processed.");
+                    rownum++;
                 }
 
-                System.out.println("Records pair " + rownum + " of " + allRecords1.size()*allRecords2.size() + " processed.");
-                rownum++;
+            }
+            fos = new FileOutputStream(new File("dataset_for_doc2vec_simple_pairs_with_typos.xlsx"));;
+            wb.write(fos);;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }finally {
+            try {
+                if (fos != null) {
+                    fos.close();
+                }
+            } catch (IOException e) {
+            }
+            try {
+                if (wb != null) {
+                    wb.close();
+                }
+            } catch (IOException e) {
             }
         }
 
-        return workbook;
+
+
+//        return workbook;
 
 
 
     }
 
-    private static HashMap<String, HashSet<String>> loadExcel(String filename) throws IOException, InvalidFormatException {
+    private static HashMap<String, String> loadExcel(String filename) throws IOException, InvalidFormatException {
 
-        HashMap<String, HashSet<String>> result = new HashMap<String, HashSet<String>> ();
+        HashMap<String, String> result = new HashMap<>();
 
         Workbook workbook = WorkbookFactory.create(new File(filename));
 
@@ -111,23 +139,14 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
 
         Iterator<Row> rowIterator = sheet.rowIterator();
 
-        String prevRecord = "";
-        HashSet<String> recordsVariations = new HashSet<>();
+
         while (rowIterator.hasNext()) {
             Row row = rowIterator.next();
             Cell cell = row.getCell(0);
-            String currRecord = cell.getStringCellValue();
-            if (!Objects.equals(currRecord, prevRecord)) {
-                if (recordsVariations.size() != 0) {
-                    result.put(prevRecord, recordsVariations);
-                }
-                prevRecord = currRecord;
-                recordsVariations = new HashSet<>();
-            }
+            String baseRecord = cell.getStringCellValue();
             cell = row.getCell(1);
-            if (cell != null) {
-                recordsVariations.add(cell.getStringCellValue());
-            }
+            String changedRecord = cell.getStringCellValue();
+            result.put(changedRecord, baseRecord);
         }
 
         return result;
@@ -143,14 +162,14 @@ public class dataset_for_doc2vec_simple_pairs_with_orfos {
         }
     }
 
-    public static String getRecordKey(String record, HashMap<String, HashSet<String>> allRecords) {
-        final String[] result = new String[1];
-        allRecords.forEach((records, recordsVars) -> {
-            if (recordsVars.contains(record)) {
-                result[0] = record;
-            }
-        });
-        return result[0];
-    }
+//    public static String getRecordKey(String record, HashMap<String, HashSet<String>> allRecords) {
+//        final String[] result = new String[1];
+//        allRecords.forEach((records, recordsVars) -> {
+//            if (recordsVars.contains(record)) {
+//                result[0] = record;
+//            }
+//        });
+//        return result[0];
+//    }
 
 }
